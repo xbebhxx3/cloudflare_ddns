@@ -53,6 +53,7 @@ jobs:
             ext: ".exe"
             static: 1
             target: ""
+            openssl_arch: linux-aarch64
 
           - os: windows
             arch: x86
@@ -60,6 +61,7 @@ jobs:
             ext: ".exe"
             static: 1
             target: ""
+            openssl_arch: linux-aarch64
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     env:
@@ -89,24 +91,19 @@ jobs:
         run: |
           cat << 'EOF' > build_openssl.sh
           #!/bin/bash
-          set -e
+          set -ex
 
           curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz
           tar xzf openssl-1.1.1w.tar.gz
           cd openssl-1.1.1w
 
-          echo "[INFO] CC=$CC"
-          echo "[INFO] CFLAGS=$CFLAGS"
-
           ./Configure ${OPENSSL_ARCH} no-shared no-tests --prefix=/usr/local/ssl
-
           make -j$(nproc)
           make install_sw
           EOF
 
           chmod +x build_openssl.sh
-          ./dockcross ./build_openssl.sh
-
+          ./dockcross bash -c "export OPENSSL_ARCH=${{ matrix.openssl_arch }} && ./build_openssl.sh"
 
       - name: Build libcurl (Linux only)
         if: ${{ matrix.os == 'linux' }}
