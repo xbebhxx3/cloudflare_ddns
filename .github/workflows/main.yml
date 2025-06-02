@@ -15,32 +15,32 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x86_64：使用 linux-x86_64-full（预装静态 libcurl/openssl）
+          # Linux x86_64：使用 musl 镜像，内置常见静态库
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x86_64-full
+            image: dockcross/linux-x64-musl
             ext: ""
-          # Linux x86：切换到 linux-x86-full（预装静态 libcurl/openssl）
+          # Linux i686 (x86)：使用原生镜像，后续通过 apt-get 安装开发包
           - os: linux
             arch: x86
-            image: dockcross/linux-x86-full
+            image: dockcross/linux-x86
             ext: ""
-          # Linux ARMv7：如果有 linux-armv7-full，请替换；否则保持原镜像并手动安装
+          # Linux ARMv7：使用原生镜像，后续通过 apt-get 安装开发包
           - os: linux
             arch: armv7
-            image: dockcross/linux-armv7-full
+            image: dockcross/linux-armv7
             ext: ""
-          # Linux aarch64：使用 linux-arm64-full（预装静态 libcurl/openssl）
+          # Linux aarch64：使用 musl 镜像，内置常见静态库
           - os: linux
             arch: aarch64
-            image: dockcross/linux-arm64-full
+            image: dockcross/linux-arm64-musl
             ext: ""
-          # Windows x86_64：自带静态 libcurl/openssl
+          # Windows x86_64：内置静态 libcurl/openssl
           - os: windows
             arch: x86_64
             image: dockcross/windows-static-x64
             ext: ".exe"
-          # Windows x86：自带静态 libcurl/openssl
+          # Windows x86：内置静态 libcurl/openssl
           - os: windows
             arch: x86
             image: dockcross/windows-static-x86
@@ -60,14 +60,15 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      # 只有 armv7 平台还需要手动安装静态库
-      - name: Install static dependencies (armv7 only)
-        if: matrix.arch == 'armv7'
+      # 对于 i686 和 armv7，这两者镜像里没有预装静态 libcurl/openssl，仅安装动态开发包
+      - name: Install dependencies (i686 & armv7 only)
+        if: matrix.os == 'linux' && (matrix.arch == 'x86' || matrix.arch == 'armv7')
         run: |
           ./dockcross bash -c "\
             apt-get update && \
             apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev"
 
+      # 编译阶段
       - name: Build binary
         run: |
           ./dockcross bash -c "set -x; make CXX=\$CXX EXT=${{ matrix.ext }}"
