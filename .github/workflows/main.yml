@@ -17,75 +17,77 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux targets
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+          - os: linux
             arch: x86_64
-            suffix: ""
-
-          - os: ubuntu-latest
-            target: i686-unknown-linux-gnu
+            target: x86_64-linux-gnu
+            image: dockcross/linux-x64
+            ext: ""
+          - os: linux
             arch: x86
-            suffix: ""
-
-          - os: ubuntu-latest
-            target: aarch64-linux-gnu
-            arch: aarch64
-            suffix: ""
-
-          - os: ubuntu-latest
-            target: arm-linux-gnueabihf
+            target: i686-linux-gnu
+            image: dockcross/linux-x86
+            ext: ""
+          - os: linux
             arch: armv7
-            suffix: ""
-
-          # Windows targets
-          - os: windows-latest
-            target: x86_64-w64-mingw32
+            target: armv7-linux-gnueabihf
+            image: dockcross/linux-armv7
+            ext: ""
+          - os: linux
+            arch: aarch64
+            target: aarch64-linux-gnu
+            image: dockcross/linux-arm64
+            ext: ""
+          - os: windows
             arch: x86_64
-            suffix: .exe
-
-          - os: windows-latest
-            target: i686-w64-mingw32
+            target: x86_64-w64-mingw32
+            image: dockcross/windows-static-x64
+            ext: ".exe"
+          - os: windows
             arch: x86
-            suffix: .exe
+            target: i686-w64-mingw32
+            image: dockcross/windows-static-x86
+            ext: ".exe"
 
-    name: Build for ${{ matrix.os }} (${{ matrix.arch }})
+    name: Build ${{ matrix.os }}-${{ matrix.arch }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Prepare dockcross script
         run: |
-          sudo apt update
-          sudo apt install -y g++ curl make zip libcurl4-openssl-dev gcc-${{ matrix.arch }}-linux-gnu g++-${{ matrix.arch }}-linux-gnu
+          docker run --rm ${{ matrix.image }} > ./dockcross
+          chmod +x ./dockcross
 
-      - name: Set up dependencies (Windows)
-        if: runner.os == 'Windows'
+      - name: Build binary
         run: |
-          choco install -y zip
-          vcpkg install curl
+          ./dockcross bash -c "make clean && make"
 
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
+      - name: Rename and package
         run: |
-          make CXX=${{ matrix.target }}-g++
+          mkdir -p out
+          cp cf_ddns${{ matrix.ext }} out/cf_ddns-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+          cp config.toml out/
+          cd out && zip cf_ddns-${{ matrix.os }}-${{ matrix.arch }}.zip *
 
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          $env:INCLUDE="C:\vcpkg\installed\${{ matrix.arch }}-windows\include"
-          $env:LIB="C:\vcpkg\installed\${{ matrix.arch }}-windows\lib"
-          g++ -std=c++17 main.cpp -I"$env:INCLUDE" -L"$env:LIB" -lcurl -o cf_ddns${{ matrix.suffix }}
-
-      - name: Prepare release artifacts
-        run: |
-          mkdir -p release
-          cp cf_ddns${{ matrix.suffix }} release/
-          cp config.json release/
-          zip -r cf_ddns_${{ runner.os }}_${{ matrix.arch }}.zip release
-
-      - name: Upload release artifacts
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: cf_ddns-${{ matrix.os }}-${{ matrix.arch }}
-          path: cf_ddns_${{ runner.os }}_${{ matrix.arch }}.zip
+          path: out/cf_ddns-${{ matrix.os }}-${{ matrix.arch }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/**/cf_ddns-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
