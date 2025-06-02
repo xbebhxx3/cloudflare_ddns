@@ -60,6 +60,7 @@ jobs:
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     env:
       HOST_TRIPLE: "${{ matrix.target }}"
+      OPENSSL_ARCH: "${{ matrix.openssl_arch }}"
 
     steps:
       - name: Checkout code
@@ -83,16 +84,25 @@ jobs:
         if: ${{ matrix.os == 'linux' }}
         run: |
           cat << 'EOF' > build_openssl.sh
+          #!/bin/bash
           set -e
+
           curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz
           tar xzf openssl-1.1.1w.tar.gz
           cd openssl-1.1.1w
-          CC=$CC ./Configure linux-elf no-shared no-tests --prefix=/usr/local/ssl -m32
+
+          echo "[INFO] CC=$CC"
+          echo "[INFO] CFLAGS=$CFLAGS"
+
+          ./Configure ${OPENSSL_ARCH} no-shared no-tests --prefix=/usr/local/ssl
+
           make -j$(nproc)
           make install_sw
           EOF
+
           chmod +x build_openssl.sh
           ./dockcross ./build_openssl.sh
+
 
       - name: Build libcurl (Linux only)
         if: ${{ matrix.os == 'linux' }}
