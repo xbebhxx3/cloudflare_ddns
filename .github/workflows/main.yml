@@ -87,7 +87,7 @@ jobs:
           curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz
           tar xzf openssl-1.1.1w.tar.gz
           cd openssl-1.1.1w
-          ./config no-shared no-tests --prefix=/usr/local/ssl
+          CC=$CC ./Configure linux-elf no-shared no-tests --prefix=/usr/local/ssl -m32
           make -j$(nproc)
           make install_sw
           EOF
