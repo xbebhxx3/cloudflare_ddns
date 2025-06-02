@@ -97,7 +97,7 @@ jobs:
           tar xzf openssl-1.1.1w.tar.gz
           cd openssl-1.1.1w
 
-          ./Configure ${OPENSSL_ARCH} no-shared no-tests --prefix=/usr/local/ssl --cross-compile-prefix=${HOST_TRIPLE}-
+          ./Configure ${OPENSSL_ARCH} no-shared no-tests --prefix=/usr/local/ssl --cross-compile-prefix=
           make -j$(nproc)
           make install_sw
           EOF
