@@ -17,32 +17,26 @@ jobs:
         include:
           - os: linux
             arch: x86_64
-            target: x86_64-linux-gnu
             image: dockcross/linux-x64
             ext: ""
           - os: linux
             arch: x86
-            target: i686-linux-gnu
             image: dockcross/linux-x86
             ext: ""
           - os: linux
             arch: armv7
-            target: armv7-linux-gnueabihf
             image: dockcross/linux-armv7
             ext: ""
           - os: linux
             arch: aarch64
-            target: aarch64-linux-gnu
             image: dockcross/linux-arm64
             ext: ""
           - os: windows
             arch: x86_64
-            target: x86_64-w64-mingw32
             image: dockcross/windows-static-x64
             ext: ".exe"
           - os: windows
             arch: x86
-            target: i686-w64-mingw32
             image: dockcross/windows-static-x86
             ext: ".exe"
 
@@ -51,9 +45,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Pull dockcross image and create script
+      - name: Cache dockcross image
+        id: cache-dockcross
+        uses: actions/cache@v4
+        with:
+          path: dockcross-${{ matrix.arch }}.tar
+          key: dockcross-${{ matrix.image }}-v1
+
+      - name: Pull and save dockcross image
+        if: steps.cache-dockcross.outputs.cache-hit != 'true'
         run: |
-          docker run --rm ${{ matrix.image }} > ./dockcross
+          docker pull ${{ matrix.image }}
+          docker save ${{ matrix.image }} -o dockcross-${{ matrix.arch }}.tar
+
+      - name: Load dockcross image from cache
+        run: |
+          docker load -i dockcross-${{ matrix.arch }}.tar
+
+      - name: Generate dockcross script
+        run: |
+          docker run --rm --privileged ${{ matrix.image }} > ./dockcross
           chmod +x ./dockcross
 
       - name: Download json.hpp if missing
@@ -62,11 +73,7 @@ jobs:
 
       - name: Build binary
         run: |
-          ./dockcross bash -c "make CXX=\$CXX EXT=${{ matrix.ext }}"
-
-      - name: Build binary
-        run: |
-          ./dockcross bash -c "make CXX=\$CXX EXT=${{ matrix.ext }}"
+          ./dockcross bash -c "set -x; make CXX=\$CXX EXT=${{ matrix.ext }}"
 
       - name: Prepare package
         run: |
