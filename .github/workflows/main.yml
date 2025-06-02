@@ -77,10 +77,11 @@ jobs:
         if: ${{ matrix.os == 'linux' }}
         run: |
           ./dockcross bash -c "\
+           export CC=${{ matrix.cc_prefix }}-gcc; \
             curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
             tar xzf openssl-1.1.1w.tar.gz && \
             cd openssl-1.1.1w && \
-            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl && \
+            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl ${{ matrix.openssl_arch }} && \
             make -j\$(nproc) && \
             make install_sw"
 
