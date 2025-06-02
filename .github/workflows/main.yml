@@ -21,6 +21,7 @@ jobs:
             ext: ""
             static: 0
             target: x86_64-linux-gnu
+            openssl_arch: linux-x86_64
 
           - os: linux
             arch: x86
@@ -28,6 +29,7 @@ jobs:
             ext: ""
             static: 0
             target: i686-linux-gnu
+            openssl_arch: linux-elf
 
           - os: linux
             arch: armv7
@@ -35,6 +37,7 @@ jobs:
             ext: ""
             static: 0
             target: arm-linux-gnueabihf
+            openssl_arch: linux-armv4
 
           - os: linux
             arch: aarch64
@@ -42,6 +45,7 @@ jobs:
             ext: ""
             static: 0
             target: aarch64-linux-gnu
+            openssl_arch: linux-aarch64
 
           - os: windows
             arch: x86_64
