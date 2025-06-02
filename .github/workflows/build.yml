@@ -1,74 +1,85 @@
-name: Build CF DDNS
+name: Build and Package cf_ddns
 
 on:
   push:
-    branches: [main]
-  pull_request:
+    tags:
+      - 'v*'
 
 jobs:
-  build-linux:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x86_64, x86, aarch64, armv7]
+        include:
+          # Linux targets
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            arch: x86_64
+            suffix: ""
 
+          - os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            arch: x86
+            suffix: ""
+
+          - os: ubuntu-latest
+            target: aarch64-linux-gnu
+            arch: aarch64
+            suffix: ""
+
+          - os: ubuntu-latest
+            target: arm-linux-gnueabihf
+            arch: armv7
+            suffix: ""
+
+          # Windows targets
+          - os: windows-latest
+            target: x86_64-w64-mingw32
+            arch: x86_64
+            suffix: .exe
+
+          - os: windows-latest
+            target: i686-w64-mingw32
+            arch: x86
+            suffix: .exe
+
+    name: Build for ${{ matrix.os }} (${{ matrix.arch }})
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt update && sudo apt install -y g++ curl zip gcc-multilib g++-multilib
-
-      - name: Build for Linux ${{ matrix.arch }}
+      - name: Set up dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          case "${{ matrix.arch }}" in
-            x86_64)
-              g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_x86_64 main.cpp -lcurl
-              zip cf_ddns_linux_x86_64.zip cf_ddns_linux_x86_64 config.toml
-              ;;
-            x86)
-              g++ -m32 -std=c++17 -Wall -O2 -o cf_ddns_linux_x86 main.cpp -lcurl
-              zip cf_ddns_linux_x86.zip cf_ddns_linux_x86 config.toml
-              ;;
-            aarch64)
-              sudo apt-get install -y g++-aarch64-linux-gnu
-              aarch64-linux-gnu-g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_aarch64 main.cpp -lcurl
-              zip cf_ddns_linux_aarch64.zip cf_ddns_linux_aarch64 config.toml
-              ;;
-            armv7)
-              sudo apt-get install -y g++-arm-linux-gnueabihf
-              arm-linux-gnueabihf-g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_armv7 main.cpp -lcurl
-              zip cf_ddns_linux_armv7.zip cf_ddns_linux_armv7 config.toml
-              ;;
-          esac
+          sudo apt update
+          sudo apt install -y g++ curl make zip libcurl4-openssl-dev gcc-${{ matrix.arch }}-linux-gnu g++-${{ matrix.arch }}-linux-gnu
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: linux_${{ matrix.arch }}
-          path: cf_ddns_linux_${{ matrix.arch }}.zip
-
-  build-windows:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [x86_64, x86]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install mingw-w64 and zip
-        run: sudo apt update && sudo apt install -y mingw-w64 zip
-
-      - name: Build for Windows ${{ matrix.arch }}
+      - name: Set up dependencies (Windows)
+        if: runner.os == 'Windows'
         run: |
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            x86_64-w64-mingw32-g++ -std=c++17 -Wall -O2 -o cf_ddns_win_x86_64.exe main.cpp -lcurl
-            zip cf_ddns_win_x86_64.zip cf_ddns_win_x86_64.exe config.toml
-          elif [ "${{ matrix.arch }}" = "x86" ]; then
-            i686-w64-mingw32-g++ -std=c++17 -Wall -O2 -o cf_ddns_win_x86.exe main.cpp -lcurl
-            zip cf_ddns_win_x86.zip cf_ddns_win_x86.exe config.toml
-          fi
+          choco install -y zip
+          vcpkg install curl
 
-      - uses: actions/upload-artifact@v3
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          make CXX=${{ matrix.target }}-g++
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $env:INCLUDE="C:\vcpkg\installed\${{ matrix.arch }}-windows\include"
+          $env:LIB="C:\vcpkg\installed\${{ matrix.arch }}-windows\lib"
+          g++ -std=c++17 main.cpp -I"$env:INCLUDE" -L"$env:LIB" -lcurl -o cf_ddns${{ matrix.suffix }}
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release
+          cp cf_ddns${{ matrix.suffix }} release/
+          cp config.json release/
+          zip -r cf_ddns_${{ runner.os }}_${{ matrix.arch }}.zip release
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: windows_${{ matrix.arch }}
-          path: cf_ddns_win_${{ matrix.arch }}.zip
+          name: cf_ddns-${{ matrix.os }}-${{ matrix.arch }}
+          path: cf_ddns_${{ runner.os }}_${{ matrix.arch }}.zip
