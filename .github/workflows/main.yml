@@ -64,10 +64,6 @@ jobs:
             openssl_arch: linux-aarch64
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
-    env:
-      HOST_TRIPLE: "${{ matrix.target }}"
-      OPENSSL_ARCH: "${{ matrix.openssl_arch }}"
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -118,7 +114,7 @@ jobs:
           make install
           EOF
           chmod +x build_curl.sh
-          ./dockcross ./build_curl.sh
+          ./dockcross bash -c "export HOST_TRIPLE=${{ matrix.target }} && ./build_curl.sh"
 
       - name: Build binary
         run: |
