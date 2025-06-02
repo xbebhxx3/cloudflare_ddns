@@ -105,11 +105,24 @@ jobs:
         if: ${{ matrix.os == 'linux' }}
         run: |
           cat << 'EOF' > build_curl.sh
-          set -e
+          #!/bin/bash
+          set -ex
+          ls /usr/local/ssl
+          
+          export PKG_CONFIG_PATH=/usr/local/ssl/lib/pkgconfig
+
           curl -LO https://curl.se/download/curl-8.8.0.tar.gz
           tar xzf curl-8.8.0.tar.gz
           cd curl-8.8.0
-          ./configure --host=${HOST_TRIPLE} --disable-shared --enable-static --with-ssl=/usr/local/ssl 
+
+          ./configure \
+            --host=${HOST_TRIPLE} \
+            --disable-shared \
+            --enable-static \
+            --with-ssl=/usr/local/ssl \
+            CPPFLAGS="-I/usr/local/ssl/include" \
+            LDFLAGS="-L/usr/local/ssl/lib"
+
           make -j$(nproc)
           make install
           EOF
