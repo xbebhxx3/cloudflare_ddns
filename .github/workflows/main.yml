@@ -15,36 +15,36 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x86_64：使用 musl 镜像，内置常见静态库
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x64-musl
+            image: dockcross/linux-x64
             ext: ""
-          # Linux i686 (x86)：使用原生镜像，后续通过 apt-get 安装开发包
+            static: 0
           - os: linux
             arch: x86
             image: dockcross/linux-x86
             ext: ""
-          # Linux ARMv7：使用原生镜像，后续通过 apt-get 安装开发包
+            static: 0
           - os: linux
             arch: armv7
             image: dockcross/linux-armv7
             ext: ""
-          # Linux aarch64：使用 musl 镜像，内置常见静态库
+            static: 0
           - os: linux
             arch: aarch64
-            image: dockcross/linux-arm64-musl
+            image: dockcross/linux-arm64
             ext: ""
-          # Windows x86_64：内置静态 libcurl/openssl
+            static: 0
           - os: windows
             arch: x86_64
             image: dockcross/windows-static-x64
             ext: ".exe"
-          # Windows x86：内置静态 libcurl/openssl
+            static: 1
           - os: windows
             arch: x86
             image: dockcross/windows-static-x86
             ext: ".exe"
+            static: 1
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -60,18 +60,14 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      # 对于 i686 和 armv7，这两者镜像里没有预装静态 libcurl/openssl，仅安装动态开发包
-      - name: Install dependencies (i686 & armv7 only)
-        if: matrix.os == 'linux' && (matrix.arch == 'x86' || matrix.arch == 'armv7')
+      - name: Install dependencies (Linux only)
+        if: ${{ matrix.os == 'linux' }}
         run: |
-          ./dockcross bash -c "\
-            apt-get update && \
-            apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev"
+          ./dockcross bash -c "apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev"
 
-      # 编译阶段
       - name: Build binary
         run: |
-          ./dockcross bash -c "set -x; make CXX=\$CXX EXT=${{ matrix.ext }}"
+          ./dockcross bash -c "make CXX=\$CXX EXT=${{ matrix.ext }} STATIC=${{ matrix.static }}"
 
       - name: Prepare package
         run: |
