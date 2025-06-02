@@ -20,31 +20,38 @@ jobs:
             image: dockcross/linux-x64
             ext: ""
             static: 0
+            openssl_arch: linux-x86_64
           - os: linux
             arch: x86
             image: dockcross/linux-x86
             ext: ""
             static: 0
+            openssl_arch: linux-elf
           - os: linux
             arch: armv7
             image: dockcross/linux-armv7
             ext: ""
             static: 0
+            openssl_arch: linux-armv4
           - os: linux
             arch: aarch64
             image: dockcross/linux-arm64-full
             ext: ""
             static: 0
+            openssl_arch: linux-aarch64
           - os: windows
             arch: x86_64
             image: dockcross/windows-static-x64
             ext: ".exe"
             static: 1
+            openssl_arch: windows-static-x64
           - os: windows
             arch: x86
             image: dockcross/windows-static-x86
             ext: ".exe"
             static: 1
+            openssl_arch: windows-static-x86
+
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     env:
@@ -76,7 +83,7 @@ jobs:
             curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
             tar xzf openssl-1.1.1w.tar.gz && \
             cd openssl-1.1.1w && \
-            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl $OPENSSL_ARCH && \
+            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl ${{ matrix.openssl_arch }} && \
             make -j\$(nproc) && \
             make install_sw"
 
