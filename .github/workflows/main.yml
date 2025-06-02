@@ -17,7 +17,7 @@ jobs:
         include:
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x86_x64
+            image: dockcross/linux-x64
             ext: ""
             static: 0
           - os: linux
