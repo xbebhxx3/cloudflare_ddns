@@ -47,6 +47,10 @@ jobs:
             static: 1
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
+    env:
+      OPENSSL_ARCH: "${{ matrix.arch == 'x86_64' ? 'linux-x86_64' : (matrix.arch == 'x86' ? 'linux-elf' : (matrix.arch == 'armv7' ? 'linux-armv4' : (matrix.arch == 'aarch64' ? 'linux-aarch64' : ''))) }}"
+      HOST_TRIPLE: "${{ matrix.arch == 'x86_64' ? 'x86_64-linux-gnu' : (matrix.arch == 'x86' ? 'i686-linux-gnu' : (matrix.arch == 'armv7' ? 'arm-linux-gnueabihf' : (matrix.arch == 'aarch64' ? 'aarch64-linux-gnu' : ''))) }}"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,10 +76,9 @@ jobs:
             curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
             tar xzf openssl-1.1.1w.tar.gz && \
             cd openssl-1.1.1w && \
-            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl linux-${{ matrix.arch }} && \
+            ./Configure no-shared no-tests --prefix=/usr/local openssldir=/usr/local/ssl $OPENSSL_ARCH && \
             make -j\$(nproc) && \
             make install_sw"
-
 
       - name: Build libcurl from source (Linux only)
         if: ${{ matrix.os == 'linux' }}
@@ -84,18 +87,17 @@ jobs:
             curl -LO https://curl.se/download/curl-8.8.0.tar.gz && \
             tar xzf curl-8.8.0.tar.gz && \
             cd curl-8.8.0 && \
-            ./configure --disable-shared --enable-static --with-ssl=/usr/local && \
+            ./configure --host=$HOST_TRIPLE --disable-shared --enable-static --with-ssl=/usr/local && \
             make -j\$(nproc) && \
             make install"
-
 
       - name: Build binary
         run: |
           ./dockcross bash -c "\
             make CXX=\$CXX EXT=${{ matrix.ext }} STATIC=${{ matrix.static }} \
-            CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' \
-            LDFLAGS='-L/usr/local/lib -L/usr/local/ssl/lib -lcurl -lssl -lcrypto -lz -ldl'"
-
+              CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' \
+              LDFLAGS='-L/usr/local/lib -L/usr/local/ssl/lib' \
+              LDLIBS='-lcurl -lssl -lcrypto -lz -ldl'"
 
       - name: Prepare package
         run: |
