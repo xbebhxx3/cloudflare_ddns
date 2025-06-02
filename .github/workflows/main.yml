@@ -56,9 +56,17 @@ jobs:
           docker run --rm ${{ matrix.image }} > ./dockcross
           chmod +x ./dockcross
 
+      - name: Download json.hpp if missing
+        run: |
+          [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
+
       - name: Build binary
         run: |
-          ./dockcross bash -c "make EXT=${{ matrix.ext }}"
+          ./dockcross bash -c "make CXX=\$CXX EXT=${{ matrix.ext }}"
+
+      - name: Build binary
+        run: |
+          ./dockcross bash -c "make CXX=\$CXX EXT=${{ matrix.ext }}"
 
       - name: Prepare package
         run: |

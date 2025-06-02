@@ -1,4 +1,4 @@
-CXX = g++
+CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -O2
 LIBS = -lcurl
 SRC = main.cpp
