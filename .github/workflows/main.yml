@@ -17,40 +17,33 @@ jobs:
         include:
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x64
-            ext: ""
-            static: 0
+            cc_prefix: x86_64-linux-gnu
             openssl_arch: linux-x86_64
           - os: linux
             arch: x86
-            image: dockcross/linux-x86
-            ext: ""
-            static: 0
+            cc_prefix: i686-linux-gnu
             openssl_arch: linux-elf
           - os: linux
             arch: armv7
-            image: dockcross/linux-armv7
-            ext: ""
-            static: 0
+            cc_prefix: arm-linux-gnueabihf
             openssl_arch: linux-armv4
           - os: linux
             arch: aarch64
-            image: dockcross/linux-arm64-full
-            ext: ""
-            static: 0
+            cc_prefix: aarch64-linux-gnu
             openssl_arch: linux-aarch64
           - os: windows
             arch: x86_64
-            image: dockcross/windows-static-x64
+            cc_prefix: ""
+            openssl_arch: ""
             ext: ".exe"
             static: 1
-            openssl_arch: windows-static-x64
           - os: windows
             arch: x86
-            image: dockcross/windows-static-x86
+            cc_prefix: ""
+            openssl_arch: ""
             ext: ".exe"
             static: 1
-            openssl_arch: windows-static-x86
+
 
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
