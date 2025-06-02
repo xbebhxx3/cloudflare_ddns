@@ -20,7 +20,6 @@ jobs:
             image: dockcross/linux-x64
             ext: ""
             static: 0
-            openssl_arch: linux-x86_64
             target: x86_64-linux-gnu
 
           - os: linux
@@ -28,7 +27,6 @@ jobs:
             image: dockcross/linux-x86
             ext: ""
             static: 0
-            openssl_arch: linux-elf
             target: i686-linux-gnu
 
           - os: linux
@@ -36,7 +34,6 @@ jobs:
             image: dockcross/linux-armv7
             ext: ""
             static: 0
-            openssl_arch: linux-armv4
             target: arm-linux-gnueabihf
 
           - os: linux
@@ -44,7 +41,6 @@ jobs:
             image: dockcross/linux-arm64-full
             ext: ""
             static: 0
-            openssl_arch: linux-aarch64
             target: aarch64-linux-gnu
 
           - os: windows
@@ -52,7 +48,6 @@ jobs:
             image: dockcross/windows-static-x64
             ext: ".exe"
             static: 1
-            openssl_arch: ""
             target: ""
 
           - os: windows
@@ -60,7 +55,6 @@ jobs:
             image: dockcross/windows-static-x86
             ext: ".exe"
             static: 1
-            openssl_arch: ""
             target: ""
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
@@ -83,38 +77,45 @@ jobs:
       - name: Install build tools (Linux only)
         if: ${{ matrix.os == 'linux' }}
         run: |
-          ./dockcross bash -c "apt-get update && apt-get install -y autoconf libtool pkg-config curl"
+          ./dockcross bash -c "apt-get update && apt-get install -y autoconf libtool pkg-config curl build-essential"
 
-      - name: Build OpenSSL from source (Linux only)
+      - name: Build OpenSSL (Linux only)
         if: ${{ matrix.os == 'linux' }}
         run: |
-          ./dockcross bash -c "\
-            curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
-            tar xzf openssl-1.1.1w.tar.gz && \
-            cd openssl-1.1.1w && \
-            ./config no-shared no-tests --prefix=/usr/local/ssl && \
-            make -j\$(nproc) && \
-            make install_sw"
+          cat << 'EOF' > build_openssl.sh
+          set -e
+          curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+          tar xzf openssl-1.1.1w.tar.gz
+          cd openssl-1.1.1w
+          ./config no-shared no-tests --prefix=/usr/local/ssl
+          make -j$(nproc)
+          make install_sw
+          EOF
+          chmod +x build_openssl.sh
+          ./dockcross ./build_openssl.sh
 
-
-      - name: Build libcurl from source (Linux only)
+      - name: Build libcurl (Linux only)
         if: ${{ matrix.os == 'linux' }}
         run: |
-          ./dockcross bash -c "\
-            curl -LO https://curl.se/download/curl-8.8.0.tar.gz && \
-            tar xzf curl-8.8.0.tar.gz && \
-            cd curl-8.8.0 && \
-            ./configure --host=$HOST_TRIPLE --disable-shared --enable-static --with-ssl=/usr/local && \
-            make -j\$(nproc) && \
-            make install"
+          cat << 'EOF' > build_curl.sh
+          set -e
+          curl -LO https://curl.se/download/curl-8.8.0.tar.gz
+          tar xzf curl-8.8.0.tar.gz
+          cd curl-8.8.0
+          ./configure --host=${HOST_TRIPLE} --disable-shared --enable-static --with-ssl=/usr/local/ssl
+          make -j$(nproc)
+          make install
+          EOF
+          chmod +x build_curl.sh
+          ./dockcross ./build_curl.sh
 
       - name: Build binary
         run: |
           ./dockcross bash -c "\
             make CXX=\$CXX EXT=${{ matrix.ext }} STATIC=${{ matrix.static }} \
-              CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' \
-              LDFLAGS='-L/usr/local/lib -L/usr/local/ssl/lib' \
-              LDLIBS='-lcurl -lssl -lcrypto -lz -ldl'"
+            CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' \
+            LDFLAGS='-L/usr/local/lib -L/usr/local/ssl/lib' \
+            LDLIBS='-lcurl -lssl -lcrypto -lz -ldl'"
 
       - name: Prepare package
         run: |
