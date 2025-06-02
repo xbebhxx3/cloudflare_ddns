@@ -58,7 +58,7 @@ jobs:
 
       - name: Build binary
         run: |
-          ./dockcross bash -c "make clean && make"
+          ./dockcross bash -c "make EXT=${{ matrix.ext }}"
 
       - name: Prepare package
         run: |

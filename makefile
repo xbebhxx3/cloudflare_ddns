@@ -3,11 +3,8 @@ CXXFLAGS = -std=c++17 -Wall -O2
 LIBS = -lcurl
 SRC = main.cpp
 
-ifeq ($(findstring mingw,$(CXX)),mingw)
-  TARGET = cf_ddns.exe
-else
-  TARGET = cf_ddns
-endif
+EXT ?=
+TARGET = cf_ddns$(EXT)
 
 all: $(TARGET)
 
