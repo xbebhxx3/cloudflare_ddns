@@ -15,29 +15,35 @@ jobs:
     strategy:
       matrix:
         include:
+          # Linux x86_64：改用 dockcross/linux-x86_64-full
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x64-full
+            image: dockcross/linux-x86_64-full
             ext: ""
+          # Linux x86：仍然用 dockcross/linux-x86，需要手动安装静态库
           - os: linux
             arch: x86
-            image: dockcross/linux-x86-full
+            image: dockcross/linux-x86
             ext: ""
+          # Linux ARMv7：使用默认 dockcross/linux-armv7，需要手动安装静态库
           - os: linux
             arch: armv7
-            image: dockcross/linux-armv7-full
+            image: dockcross/linux-armv7
             ext: ""
+          # Linux ARM64：使用 dockcross/linux-arm64-full，已包含静态库
           - os: linux
             arch: aarch64
             image: dockcross/linux-arm64-full
             ext: ""
+          # Windows x86_64：自带静态 libcurl/openssl
           - os: windows
             arch: x86_64
-            image: dockcross/windows-static-x64-full
+            image: dockcross/windows-static-x64
             ext: ".exe"
+          # Windows x86：自带静态 libcurl/openssl
           - os: windows
             arch: x86
-            image: dockcross/windows-static-x86-full
+            image: dockcross/windows-static-x86
             ext: ".exe"
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
@@ -54,10 +60,12 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      - name: Install static dependencies
+      - name: Install static dependencies (if needed)
+        if: matrix.os == 'linux' && (matrix.arch == 'x86' || matrix.arch == 'armv7')
         run: |
-          ./dockcross bash -c "apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev"
-
+          ./dockcross bash -c "\
+            apt-get update && \
+            apt-get install -y libcurl4-openssl-dev libssl-dev zlib1g-dev"
 
       - name: Build binary
         run: |
