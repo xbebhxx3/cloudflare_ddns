@@ -21,42 +21,52 @@ jobs:
             ext: ""
             static: 0
             openssl_arch: linux-x86_64
+            target: x86_64-linux-gnu
+
           - os: linux
             arch: x86
             image: dockcross/linux-x86
             ext: ""
             static: 0
             openssl_arch: linux-elf
+            target: i686-linux-gnu
+
           - os: linux
             arch: armv7
             image: dockcross/linux-armv7
             ext: ""
             static: 0
             openssl_arch: linux-armv4
+            target: arm-linux-gnueabihf
+
           - os: linux
             arch: aarch64
             image: dockcross/linux-arm64-full
             ext: ""
             static: 0
             openssl_arch: linux-aarch64
+            target: aarch64-linux-gnu
+
           - os: windows
             arch: x86_64
             image: dockcross/windows-static-x64
-            openssl_arch: ""
             ext: ".exe"
             static: 1
+            openssl_arch: ""
+            target: ""
+
           - os: windows
             arch: x86
             image: dockcross/windows-static-x86
-            openssl_arch: ""
             ext: ".exe"
             static: 1
-
+            openssl_arch: ""
+            target: ""
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     env:
-          OPENSSL_ARCH: "${{ matrix.arch == 'x86_64' ? 'linux-x86_64' : (matrix.arch == 'x86' ? 'linux-elf' : (matrix.arch == 'armv7' ? 'linux-armv4' : (matrix.arch == 'aarch64' ? 'linux-aarch64' : ''))) }}"
-          HOST_TRIPLE: "${{ matrix.arch == 'x86_64' ? 'x86_64-linux-gnu' : (matrix.arch == 'x86' ? 'i686-linux-gnu' : (matrix.arch == 'armv7' ? 'arm-linux-gnueabihf' : (matrix.arch == 'aarch64' ? 'aarch64-linux-gnu' : ''))) }}"
+      OPENSSL_ARCH: "${{ matrix.openssl_arch }}"
+      HOST_TRIPLE: "${{ matrix.target }}"
 
     steps:
       - name: Checkout code
