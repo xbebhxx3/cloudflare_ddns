@@ -1,4 +1,5 @@
 CXX ?= g++
+PKG_CONFIG ?= pkg-config
 SRC = main.cpp
 EXT ?=
 TARGET = cf_ddns$(EXT)
@@ -6,10 +7,16 @@ CPPFLAGS ?=
 
 ifeq ($(STATIC),1)
     CXXFLAGS = -std=c++17 -Wall -O2 -static -DCURL_STATICLIB
-    LDFLAGS = -static -lcurl -lssl -lcrypto -lz -ldl
+    PKG_LIBS := $(shell $(PKG_CONFIG) --libs libcurl)
+    PKG_CFLAGS := $(shell $(PKG_CONFIG) --cflags libcurl)
+    LDFLAGS = -static $(PKG_LIBS)
+    CPPFLAGS += $(PKG_CFLAGS)
 else
     CXXFLAGS = -std=c++17 -Wall -O2
-    LDFLAGS = -lcurl -lssl -lcrypto -lz -ldl
+    PKG_LIBS := $(shell $(PKG_CONFIG) --libs libcurl)
+    PKG_CFLAGS := $(shell $(PKG_CONFIG) --cflags libcurl)
+    LDFLAGS = $(PKG_LIBS)
+    CPPFLAGS += $(PKG_CFLAGS)
 endif
 
 all: $(TARGET)
