@@ -63,7 +63,7 @@ jobs:
       - name: Prepare package
         run: |
           mkdir -p out
-          cp cf_ddns out/cf_ddns-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+          cp cf_ddns${{ matrix.ext }} out/cf_ddns-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
           cp config.json out/
           cd out && zip cf_ddns-${{ matrix.os }}-${{ matrix.arch }}.zip *
 
