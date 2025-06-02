@@ -54,6 +54,9 @@ jobs:
 
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
+    env:
+          OPENSSL_ARCH: "${{ matrix.arch == 'x86_64' ? 'linux-x86_64' : (matrix.arch == 'x86' ? 'linux-elf' : (matrix.arch == 'armv7' ? 'linux-armv4' : (matrix.arch == 'aarch64' ? 'linux-aarch64' : ''))) }}"
+          HOST_TRIPLE: "${{ matrix.arch == 'x86_64' ? 'x86_64-linux-gnu' : (matrix.arch == 'x86' ? 'i686-linux-gnu' : (matrix.arch == 'armv7' ? 'arm-linux-gnueabihf' : (matrix.arch == 'aarch64' ? 'aarch64-linux-gnu' : ''))) }}"
 
     steps:
       - name: Checkout code
@@ -80,7 +83,7 @@ jobs:
             curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
             tar xzf openssl-1.1.1w.tar.gz && \
             cd openssl-1.1.1w && \
-            ./Configure no-shared no-tests openssldir=/usr/local/ssl ${{ matrix.openssl_arch }} && \
+            ./Configure no-shared no-tests openssldir=/usr/local/ssl $HOST_TRIPLE && \
             make -j\$(nproc) && \
             make install_sw"
 
