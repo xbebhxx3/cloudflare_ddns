@@ -93,7 +93,7 @@ jobs:
             curl -LO https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
             tar xzf openssl-1.1.1w.tar.gz && \
             cd openssl-1.1.1w && \
-            ./Configure no-shared no-tests openssldir=/usr/local/ssl $HOST_TRIPLE && \
+            ./Configure no-shared no-tests openssldir=/usr/local/ssl $OPENSSL_ARCH && \
             make -j\$(nproc) && \
             make install_sw"
 
