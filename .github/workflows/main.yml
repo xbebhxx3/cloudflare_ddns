@@ -124,7 +124,7 @@ jobs:
         run: |
           ./dockcross bash -c "\
             make CXX=\$CXX EXT=${{ matrix.ext }} STATIC=${{ matrix.static }} \
-            CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' \
+            CPPFLAGS='-I/usr/local/include -I/usr/local/ssl/include' 
 
 
       - name: Prepare package
