@@ -71,9 +71,10 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      - name: Install libcurl in dockcross container
+      - name: Install libcurl (Linux only)
+        if: matrix.os == 'linux'
         run: |
-          ./dockcross bash -c "apt-get update && apt-get install -y libcurl4-openssl-dev"
+          ./dockcross bash -c "apt-get update && apt-get install -y libcurl4-openssl-dev pkg-config"
 
       - name: Build binary
         run: |
