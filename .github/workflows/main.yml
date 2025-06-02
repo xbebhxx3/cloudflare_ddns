@@ -15,22 +15,22 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x86_64：改用 dockcross/linux-x86_64-full
+          # Linux x86_64：使用 linux-x86_64-full（预装静态 libcurl/openssl）
           - os: linux
             arch: x86_64
             image: dockcross/linux-x86_64-full
             ext: ""
-          # Linux x86：仍然用 dockcross/linux-x86，需要手动安装静态库
+          # Linux x86：切换到 linux-x86-full（预装静态 libcurl/openssl）
           - os: linux
             arch: x86
-            image: dockcross/linux-x86
+            image: dockcross/linux-x86-full
             ext: ""
-          # Linux ARMv7：使用默认 dockcross/linux-armv7，需要手动安装静态库
+          # Linux ARMv7：如果有 linux-armv7-full，请替换；否则保持原镜像并手动安装
           - os: linux
             arch: armv7
-            image: dockcross/linux-armv7
+            image: dockcross/linux-armv7-full
             ext: ""
-          # Linux ARM64：使用 dockcross/linux-arm64-full，已包含静态库
+          # Linux aarch64：使用 linux-arm64-full（预装静态 libcurl/openssl）
           - os: linux
             arch: aarch64
             image: dockcross/linux-arm64-full
@@ -60,8 +60,9 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      - name: Install static dependencies (if needed)
-        if: matrix.os == 'linux' && (matrix.arch == 'x86' || matrix.arch == 'armv7')
+      # 只有 armv7 平台还需要手动安装静态库
+      - name: Install static dependencies (armv7 only)
+        if: matrix.arch == 'armv7'
         run: |
           ./dockcross bash -c "\
             apt-get update && \
