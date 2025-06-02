@@ -29,7 +29,7 @@ jobs:
             ext: ""
           - os: linux
             arch: aarch64
-            image: dockcross/linux-arm64
+            image: dockcross/linux-arm64-full
             ext: ""
           - os: windows
             arch: x86_64
@@ -45,36 +45,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache dockcross image
-        id: cache-dockcross
-        uses: actions/cache@v4
-        with:
-          path: dockcross-${{ matrix.arch }}.tar
-          key: dockcross-${{ matrix.image }}-v1
-
-      - name: Pull and save dockcross image
-        if: steps.cache-dockcross.outputs.cache-hit != 'true'
-        run: |
-          docker pull ${{ matrix.image }}
-          docker save ${{ matrix.image }} -o dockcross-${{ matrix.arch }}.tar
-
-      - name: Load dockcross image from cache
-        run: |
-          docker load -i dockcross-${{ matrix.arch }}.tar
-
       - name: Generate dockcross script
         run: |
-          docker run --rm --privileged ${{ matrix.image }} > ./dockcross
+          docker run --rm ${{ matrix.image }} > ./dockcross
           chmod +x ./dockcross
 
       - name: Download json.hpp if missing
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
-
-      - name: Install libcurl (Linux only)
-        if: matrix.os == 'linux'
-        run: |
-          ./dockcross bash -c "apt-get update && apt-get install -y libcurl4-openssl-dev pkg-config"
 
       - name: Build binary
         run: |
