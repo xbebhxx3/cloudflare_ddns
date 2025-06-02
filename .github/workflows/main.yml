@@ -17,15 +17,15 @@ jobs:
         include:
           - os: linux
             arch: x86_64
-            image: dockcross/linux-x64
+            image: dockcross/linux-x64-full
             ext: ""
           - os: linux
             arch: x86
-            image: dockcross/linux-x86
+            image: dockcross/linux-x86-full
             ext: ""
           - os: linux
             arch: armv7
-            image: dockcross/linux-armv7
+            image: dockcross/linux-armv7-full
             ext: ""
           - os: linux
             arch: aarch64
@@ -33,11 +33,11 @@ jobs:
             ext: ""
           - os: windows
             arch: x86_64
-            image: dockcross/windows-static-x64
+            image: dockcross/windows-static-x64-full
             ext: ".exe"
           - os: windows
             arch: x86
-            image: dockcross/windows-static-x86
+            image: dockcross/windows-static-x86-full
             ext: ".exe"
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
