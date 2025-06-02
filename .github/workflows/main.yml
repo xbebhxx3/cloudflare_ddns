@@ -52,16 +52,16 @@ jobs:
             image: dockcross/windows-static-x64
             ext: ".exe"
             static: 1
-            target: ""
-            openssl_arch: linux-aarch64
+            target: "x86_64-w64-mingw32.static"
+            openssl_arch: windows-static-x64
 
           - os: windows
             arch: x86
             image: dockcross/windows-static-x86
             ext: ".exe"
             static: 1
-            target: ""
-            openssl_arch: linux-aarch64
+            target: "i686-w64-mingw32.static"
+            openssl_arch: windows-static-x86
 
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     steps:
@@ -77,13 +77,11 @@ jobs:
         run: |
           [ -f json.hpp ] || curl -L -o json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
 
-      - name: Install build tools (Linux only)
-        if: ${{ matrix.os == 'linux' }}
+      - name: Install build tools
         run: |
           ./dockcross bash -c "apt-get update && apt-get install -y autoconf libtool pkg-config curl build-essential"
 
-      - name: Build OpenSSL (Linux only)
-        if: ${{ matrix.os == 'linux' }}
+      - name: Build OpenSSL
         run: |
           cat << 'EOF' > build_openssl.sh
           #!/bin/bash
@@ -101,8 +99,7 @@ jobs:
           chmod +x build_openssl.sh
           ./dockcross bash -c "export OPENSSL_ARCH=${{ matrix.openssl_arch }} && ./build_openssl.sh"
 
-      - name: Build libcurl (Linux only)
-        if: ${{ matrix.os == 'linux' }}
+      - name: Build libcurl
         run: |
           cat << 'EOF' > build_curl.sh
           #!/bin/bash
@@ -128,7 +125,7 @@ jobs:
           make install
           EOF
           chmod +x build_curl.sh
-          ./dockcross bash -c "export HOST_TRIPLE=${{ matrix.target }} && ./build_curl.sh"
+          ./dockcross bash -c "export OPENSSL_ARCH=${{ matrix.openssl_arch }} && export CPPFLAGS='-I/usr/local/ssl/include' && export LDFLAGS='-L/usr/local/ssl/lib' && ./build_curl.sh"
 
       - name: Build binary
         run: |
