@@ -1,0 +1,74 @@
+name: Build CF DDNS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, x86, aarch64, armv7]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y g++ curl zip gcc-multilib g++-multilib
+
+      - name: Build for Linux ${{ matrix.arch }}
+        run: |
+          case "${{ matrix.arch }}" in
+            x86_64)
+              g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_x86_64 main.cpp -lcurl
+              zip cf_ddns_linux_x86_64.zip cf_ddns_linux_x86_64 config.toml
+              ;;
+            x86)
+              g++ -m32 -std=c++17 -Wall -O2 -o cf_ddns_linux_x86 main.cpp -lcurl
+              zip cf_ddns_linux_x86.zip cf_ddns_linux_x86 config.toml
+              ;;
+            aarch64)
+              sudo apt-get install -y g++-aarch64-linux-gnu
+              aarch64-linux-gnu-g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_aarch64 main.cpp -lcurl
+              zip cf_ddns_linux_aarch64.zip cf_ddns_linux_aarch64 config.toml
+              ;;
+            armv7)
+              sudo apt-get install -y g++-arm-linux-gnueabihf
+              arm-linux-gnueabihf-g++ -std=c++17 -Wall -O2 -o cf_ddns_linux_armv7 main.cpp -lcurl
+              zip cf_ddns_linux_armv7.zip cf_ddns_linux_armv7 config.toml
+              ;;
+          esac
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linux_${{ matrix.arch }}
+          path: cf_ddns_linux_${{ matrix.arch }}.zip
+
+  build-windows:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, x86]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install mingw-w64 and zip
+        run: sudo apt update && sudo apt install -y mingw-w64 zip
+
+      - name: Build for Windows ${{ matrix.arch }}
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            x86_64-w64-mingw32-g++ -std=c++17 -Wall -O2 -o cf_ddns_win_x86_64.exe main.cpp -lcurl
+            zip cf_ddns_win_x86_64.zip cf_ddns_win_x86_64.exe config.toml
+          elif [ "${{ matrix.arch }}" = "x86" ]; then
+            i686-w64-mingw32-g++ -std=c++17 -Wall -O2 -o cf_ddns_win_x86.exe main.cpp -lcurl
+            zip cf_ddns_win_x86.zip cf_ddns_win_x86.exe config.toml
+          fi
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: windows_${{ matrix.arch }}
+          path: cf_ddns_win_${{ matrix.arch }}.zip

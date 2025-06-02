@@ -1,0 +1,19 @@
+{
+  "cfkey": "你的Cloudflare全局API密钥",
+  "cfuser": "你的Cloudflare注册邮箱",
+  "zone_name": "主域名 例如example.com",
+  "record_name": "ddns的子域名 ddns.example.com",
+  "ttl": 120,
+  "update_ipv4": true,
+  "update_ipv6": true,
+  "ipv4_services": [
+    "https://icanhazip.com",
+    "https://ifconfig.me",
+    "https://api.ip.sb/ip"
+  ],
+  "ipv6_services": [
+    "https://icanhazip.com",
+    "https://ifconfig.me",
+    "https://api64.ip.sb/ip"
+  ]
+}
