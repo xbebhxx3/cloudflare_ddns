@@ -9,7 +9,7 @@ ifeq ($(STATIC),1)
     CXXFLAGS = -std=c++17 -Wall -O2 -static -DCURL_STATICLIB
     PKG_LIBS := $(shell $(PKG_CONFIG) --libs libcurl)
     PKG_CFLAGS := $(shell $(PKG_CONFIG) --cflags libcurl)
-    LDFLAGS = -static $(PKG_LIBS)
+    LDFLAGS = -static $(PKG_LIBS) -lws2_32 -lwsock32
     CPPFLAGS += $(PKG_CFLAGS)
 else
     CXXFLAGS = -std=c++17 -Wall -O2
